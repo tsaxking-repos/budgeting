@@ -218,3 +218,269 @@ input.form-check {
 		border-color: var(--layer-3);
 	}
 }
+
+body,
+html {
+	background-color: var(--layer-0);
+	color: var(--text-layer-1);
+}
+
+// a {
+// 	color: var(--text-layer-0);
+// 	text-decoration: underline;
+
+// 	&:hover {
+// 		color: var(--text-layer-0);
+// 		text-decoration: none;
+// 	}
+// }
+
+// hr {
+// 	border-color: var(--layer-3);
+// }
+
+// code,
+// pre {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-0);
+// 	border-radius: 4px;
+// 	padding: 0.25em 0.5em;
+// }
+
+// // Buttons
+// .btn {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-0);
+// 	border-color: var(--layer-3);
+
+// 	&:hover {
+// 		background-color: var(--layer-2);
+// 		border-color: var(--layer-4);
+// 	}
+
+// 	&:active {
+// 		background-color: var(--layer-3);
+// 		border-color: var(--layer-5);
+// 	}
+
+// 	&:disabled {
+// 		background-color: var(--layer-0);
+// 		color: var(--text-layer-3);
+// 		border-color: var(--layer-2);
+// 	}
+// }
+
+// // Modal override
+// .modal-content {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-0);
+// 	border-color: var(--layer-4);
+// }
+
+// // Cards
+// .card {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-1);
+// 	border-color: var(--layer-3);
+// }
+
+// // Dropdowns
+// .dropdown-menu {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-1);
+// 	border: 1px solid var(--layer-3);
+
+// 	.dropdown-item {
+// 		color: var(--text-layer-1);
+// 		&:hover {
+// 			background-color: var(--layer-2);
+// 			color: var(--text-layer-0);
+// 		}
+// 	}
+// }
+
+// // Alerts
+// .alert {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-0);
+// 	border-color: var(--layer-3);
+// }
+
+// // Navs and Tabs
+// .nav-tabs {
+// 	border-bottom: 1px solid var(--layer-3);
+
+// 	.nav-link {
+// 		color: var(--text-layer-2);
+// 		&.active {
+// 			background-color: var(--layer-1);
+// 			color: var(--text-layer-0);
+// 			border-color: var(--layer-3) var(--layer-3) var(--layer-0);
+// 		}
+// 	}
+// }
+
+// .navbar {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-0);
+// 	.nav-link {
+// 		color: var(--text-layer-1);
+// 		&:hover {
+// 			color: var(--text-layer-0);
+// 		}
+// 	}
+// }
+
+// // Accordion
+// .accordion-item {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-1);
+// 	border-color: var(--layer-3);
+// }
+// .accordion-button {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-0);
+// 	&:not(.collapsed) {
+// 		background-color: var(--layer-2);
+// 	}
+// }
+// .accordion-body {
+//   background-color: var(--layer-1);
+//   color: var(--text-layer-1);
+// }
+// .accordion-header {
+//   background-color: var(--layer-1);
+//   color: var(--text-layer-0);
+// }
+
+// // Pagination
+// .pagination {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-1);
+// 	border-color: var(--layer-3);
+
+// 	.page-item {
+// 		&:hover {
+// 			background-color: var(--layer-2);
+// 			color: var(--text-layer-0);
+// 		}
+// 	}
+// }
+// // Toasts
+// .toast {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-0);
+// 	border-color: var(--layer-3);
+
+// 	.toast-header {
+// 		background-color: var(--layer-2);
+// 		color: var(--text-layer-0);
+// 	}
+// }
+// // Tooltip
+// .tooltip {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-0);
+// 	border-color: var(--layer-3);
+
+// 	.tooltip-inner {
+// 		background-color: var(--layer-1);
+// 		color: var(--text-layer-0);
+// 	}
+// }
+// // Popover
+// .popover {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-0);
+// 	border-color: var(--layer-3);
+
+// 	.popover-header {
+// 		background-color: var(--layer-2);
+// 		color: var(--text-layer-0);
+// 	}
+// }
+// // Spinner
+// .spinner-border {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-0);
+// 	border-color: var(--layer-3);
+
+// 	&:hover {
+// 		background-color: var(--layer-2);
+// 		color: var(--text-layer-0);
+// 	}
+// }
+// // Progress
+// .progress {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-0);
+// 	border-color: var(--layer-3);
+
+// 	.progress-bar {
+// 		background-color: var(--layer-2);
+// 		color: var(--text-layer-0);
+// 	}
+// }
+// // List group
+// .list-group {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-1);
+// 	border-color: var(--layer-3);
+
+// 	.list-group-item {
+// 		background-color: var(--layer-1);
+// 		color: var(--text-layer-1);
+// 		border-color: var(--layer-3);
+
+// 		&:hover {
+// 			background-color: var(--layer-2);
+// 			color: var(--text-layer-0);
+// 		}
+// 	}
+// }
+// // Breadcrumb
+// .breadcrumb {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-1);
+// 	border-color: var(--layer-3);
+
+// 	.breadcrumb-item {
+// 		color: var(--text-layer-1);
+// 		&:hover {
+// 			color: var(--text-layer-0);
+// 		}
+// 	}
+// }
+// // Table
+// .table {
+// 	background-color: var(--layer-1);
+// 	color: var(--text-layer-1);
+// 	border-color: var(--layer-3);
+
+// 	th,
+// 	td {
+// 		background-color: var(--layer-1);
+// 		color: var(--text-layer-1);
+// 		border-color: var(--layer-3);
+// 	}
+
+// 	thead th {
+// 		background-color: var(--layer-2);
+// 		color: var(--text-layer-0);
+// 	}
+
+// 	tbody tr {
+// 		&:nth-child(even) {
+// 			background-color: var(--layer-0);
+// 		}
+
+// 		&:hover {
+// 			background-color: var(--layer-3);
+// 		}
+// 	}
+
+// 	tfoot {
+// 		background-color: var(--layer-2);
+// 		color: var(--text-layer-1);
+// 	}
+// }
