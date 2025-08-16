@@ -2,7 +2,10 @@
 	import { goto } from '$app/navigation';
 	import { copy } from '$lib/utils/clipboard.js';
 	import { dateTime } from 'ts-utils/clock';
-	import { capitalize, fromCamelCase, fromSnakeCase, abbreviate } from 'ts-utils/text';
+	import { capitalize, fromSnakeCase, abbreviate } from 'ts-utils/text';
+	import nav from '$lib/imports/admin';
+
+	nav();
 
 	const { data } = $props();
 	const logs = $derived(data.logs);
@@ -17,8 +20,8 @@
 	const count = $derived(data.count);
 	const total = $derived(data.total);
 
-	$inspect(logs);
-	$inspect(structs);
+	// $inspect(logs);
+	// $inspect(structs);
 
 	const search = (config: {
 		accountId: string | undefined | null;
@@ -41,6 +44,10 @@
 		goto(`/dashboard/admin/logs?${sp.toString()}`);
 	};
 </script>
+
+<svelte:head>
+	<title>Admin Logs</title>
+</svelte:head>
 
 <div class="container">
 	<div class="row mb-3">
@@ -102,6 +109,42 @@
 				</button>
 			</div>
 		</div>
+	</div>
+	<div class="row mb-3">
+		<h5>Instructions</h5>
+		<p class="text-muted">
+			Search Functionality:
+			<br />
+			Each column can be filtered by typing in their respective search boxes.
+			<br />
+			Example: CLI in Account ID will show logs with "CLI" in the Account ID.
+			<br />
+			<br />
+			🚫 Exclude a Value:
+			<br />
+
+			Use ! before a word to exclude results containing that word until the next filter.
+			<br />
+			Example: !debug → Hides logs with "debug".
+			<br />
+			<br />
+			🔍 Combine Multiple Filters:
+			<br />
+
+			Use & to mix inclusion and exclusion.
+			<br />
+			Example: !debug&error → Shows logs with "error" but without "debug".
+			<br />
+			<br />
+			📝 More Examples:
+			<br />
+
+			warning → Finds logs with "warning".
+			<br />
+			!info&critical → Finds logs with "critical" but not "info".
+			<br />
+			user123 → Finds logs related to "user123".
+		</p>
 	</div>
 	<div class="row mb-3">
 		<div class="col">
