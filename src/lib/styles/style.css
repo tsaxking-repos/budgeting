@@ -25,7 +25,3 @@ body::-webkit-scrollbar-thumb:hover {
 	max-width: 100% !important;
 	/* transition: transform 0.3s ease; */
 }
-
-.card {
-	border: 0 !important;
-}
