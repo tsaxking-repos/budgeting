@@ -1,5 +1,5 @@
-alter table "sveltekit_template"."test" drop column "archive";
+alter table "sfz_budgeting"."test" drop column "archive";
 
-alter table "sveltekit_template"."test" add column "archived" boolean not null default false;
+alter table "sfz_budgeting"."test" add column "archived" boolean not null default false;
 
 
