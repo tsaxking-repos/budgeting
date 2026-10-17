@@ -31,7 +31,7 @@
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // import supabase from "$lib/services/supabase";
-import { attempt, attemptAsync, type Result, Ok, Err, debounce } from 'ts-utils';
+import { attempt, attemptAsync, type Result, Ok, Err } from 'ts-utils';
 import { type SupabaseClient } from '@supabase/supabase-js';
 import { schemas } from '$lib/types/supabase-zod';
 import { z } from 'zod';
@@ -42,6 +42,7 @@ import { DexieTable } from '$lib/services/db/table';
 import { is_online, on_network_change } from '$lib/utils/online.svelte';
 import { stable_stringify } from '$lib/utils/json';
 import { postgresChangesFilter } from '@supabase/supabase-js';
+
 /**
  * Typed Supabase client for this app with a `serviceRole` flag used for privileged server-side work.
  */
@@ -318,9 +319,10 @@ class SupaError extends Error {
 	 */
 	constructor(
 		public readonly code: SupaErrorCode,
+		public readonly struct: SupaStruct<any, any>,
 		message?: string
 	) {
-		super(message ?? `SupaStruct query error: ${code}`);
+		super(`[${struct.table}]` + (message ?? `SupaStruct query error: ${code}`));
 	}
 }
 
@@ -528,120 +530,161 @@ type Subscription<S extends RowSchemaName, T extends RowTableNames<S>> = {
 };
 
 /**
- * Active subscriptions keyed by `schema.table`.
+ * Active subscriptions grouped by schema -> table -> filter.
  *
- * Multiple query listeners may target the same table, so we store them in a stack and
- * invoke every matching callback payload instead of overwriting the previous one.
+ * Identical subscription filters share a single channel listener, but each listener keeps
+ * an array of callbacks so every subscriber still receives the same payload.
  */
-const subscriptions = new SvelteMap<
-	`${string}.${string}`,
-	Subscription<RowSchemaName, RowTableNames<RowSchemaName>>[]
->();
+type SubscriptionGroup = Record<
+	string,
+	Record<string, Record<string, Subscription<RowSchemaName, RowTableNames<RowSchemaName>>[]>>
+>;
 
-/**
- * Debounce timer used while rebuilding realtime channel bindings.
- */
-let subscribe_timeout: ReturnType<typeof setTimeout> | null = null;
-/**
- * Rebuilds the shared realtime channel from currently tracked subscriptions.
- *
- * @param {Client} client - Supabase client used for channel management.
- * @returns {void}
- */
-const reset_realtime = (client: Client) => {
-	if (subscribe_timeout) clearTimeout(subscribe_timeout);
-	subscribe_timeout = setTimeout(async () => {
-		const channels = client.getChannels();
-		for (const c of channels) {
-			if (c.topic === 'table-db-changes') {
-				await client.removeChannel(c);
+const subscriptions: SubscriptionGroup = {};
+let table_realtime_channel: ReturnType<Client['channel']> | null = null;
+let table_realtime_topic_version = 0;
+
+const debounce = <F extends (...args: any[]) => void>(func: F, wait: number) => {
+	let timeout: ReturnType<typeof setTimeout> | null = null;
+	return (...args: Parameters<F>) => {
+		if (timeout) clearTimeout(timeout);
+		timeout = setTimeout(() => {
+			try {
+				func(...args);
+			} catch (error) {
+				console.error('Debounced function error', error);
 			}
-		}
-
-		const channel = client.channel('table-db-changes');
-
-		for (const subscriptions_for_table of subscriptions.values()) {
-			for (const subscription of subscriptions_for_table) {
-				channel.on(
-					'postgres_changes',
-					{
-						event: '*',
-						schema: subscription.struct.schema,
-						table: subscription.struct.table,
-						filter: subscription.filter === '*' ? undefined : subscription.filter
-					},
-					async (payload) => {
-						const type = payload.eventType;
-						try {
-							subscription.callback?.(
-								subscription.struct.Generator(payload.new as any, {
-									cache: false
-								}),
-								type,
-								payload.old as any
-							);
-						} catch (error) {
-							console.log('Realtime subscription callback failed', {
-								error,
-								payload
-							});
-						}
-						switch (type) {
-							case 'INSERT':
-								{
-									if (payload.new) {
-										subscription.struct.Hydrate([payload.new as any]);
-									}
-								}
-								break;
-							case 'UPDATE':
-								{
-									if (payload.new) {
-										subscription.struct.Hydrate([payload.new as any]);
-									}
-								}
-								break;
-							case 'DELETE':
-								{
-									const idValue = (payload.old as { id?: string } | null)?.id;
-									if (!idValue) {
-										console.log('Realtime DELETE payload missing old.id', payload);
-										break;
-									}
-									const id = String(idValue);
-									subscription.struct['purge_cache']([id]);
-									const dexie = subscription.struct['getDexie'](
-										subscription.struct['getSchemaDefinition']().Row as any
-									);
-									if (dexie) {
-										await Promise.resolve(dexie['remove'](id)).catch((error) => {
-											console.log('Failed to remove deleted realtime row from Dexie', {
-												id,
-												error
-											});
-										});
-									}
-								}
-								break;
-						}
-					}
-				);
-			}
-		}
-		try {
-			channel.subscribe((status, err) => {
-				if (status === 'SUBSCRIBED') {
-					console.log('Realtime subscription status: SUBSCRIBED');
-				} else {
-					console.log('Realtime subscription status update', { status, err });
-				}
-			});
-		} catch (error) {
-			console.error('Failed to subscribe to realtime channel', error);
-		}
-	}, 1000);
+		}, wait);
+	};
 };
 
+const has_active_subscriptions = () => {
+	for (const schemaSubscriptions of Object.values(subscriptions)) {
+		for (const tableSubscriptions of Object.values(schemaSubscriptions)) {
+			for (const callbacks of Object.values(tableSubscriptions)) {
+				if (callbacks.length) return true;
+			}
+		}
+	}
+	return false;
+};
+
+const reset_realtime = (client: Client) => {
+	if (table_realtime_channel) {
+		void client.removeChannel(table_realtime_channel);
+		table_realtime_channel = null;
+	}
+
+	for (const c of client.getChannels()) {
+		if (c.topic.startsWith('table-db-changes')) {
+			void client.removeChannel(c);
+		}
+	}
+
+	if (!has_active_subscriptions()) return;
+
+	const topic = `table-db-changes-${++table_realtime_topic_version}`;
+	const channel = client.channel(topic);
+
+	for (const [schemaName, schemaSubscriptions] of Object.entries(subscriptions)) {
+		for (const [tableName, tableSubscriptions] of Object.entries(schemaSubscriptions)) {
+			for (const [filterKey, callbacks] of Object.entries(tableSubscriptions)) {
+				if (!callbacks?.length) continue;
+				try {
+					channel.on(
+						'postgres_changes',
+						{
+							event: '*',
+							schema: schemaName,
+							table: tableName,
+							filter: filterKey === '*' ? undefined : filterKey
+						},
+						async (payload) => {
+							console.log('Realtime payload received', payload);
+							const type = payload.eventType;
+							for (const callbackSubscription of callbacks) {
+								try {
+									callbackSubscription.callback?.(
+										callbackSubscription.struct.Generator(payload.new as any, {
+											cache: false
+										}),
+										type,
+										payload.old as any
+									);
+								} catch (error) {
+									console.log('Realtime subscription callback failed', {
+										error,
+										payload
+									});
+								}
+							}
+
+							switch (type) {
+								case 'INSERT':
+									{
+										if (payload.new) {
+											for (const callbackSubscription of callbacks) {
+												callbackSubscription.struct.Hydrate([payload.new as any]);
+											}
+										}
+									}
+									break;
+								case 'UPDATE':
+									{
+										if (payload.new) {
+											for (const callbackSubscription of callbacks) {
+												callbackSubscription.struct.Hydrate([payload.new as any]);
+											}
+										}
+									}
+									break;
+								case 'DELETE':
+									{
+										const idValue = (payload.old as { id?: string } | null)?.id;
+										if (!idValue) {
+											console.log('Realtime DELETE payload missing old.id', payload);
+											break;
+										}
+										const id = String(idValue);
+										for (const callbackSubscription of callbacks) {
+											callbackSubscription.struct['purge_cache']([id]);
+											const dexie = callbackSubscription.struct['getDexie'](
+												callbackSubscription.struct['getSchemaDefinition']().Row as any
+											);
+											if (dexie) {
+												await Promise.resolve(dexie['remove'](id)).catch((error) => {
+													console.log('Failed to remove deleted realtime row from Dexie', {
+														id,
+														error
+													});
+												});
+											}
+										}
+									}
+									break;
+							}
+						}
+					);
+				} catch (error) {
+					console.log('Failed to register realtime subscription', error);
+				}
+			}
+		}
+	}
+
+	table_realtime_channel = channel;
+	try {
+		channel.subscribe((status, err) => {
+			if (status === 'SUBSCRIBED') {
+				console.log('Realtime subscription status: SUBSCRIBED');
+			} else {
+				console.log('Realtime subscription status update', { status, err });
+			}
+		});
+	} catch (error) {
+		console.error('Failed to subscribe to realtime channel', error);
+	}
+};
 /**
  * Recursive search descriptor used by `search`.
  *
@@ -697,18 +740,44 @@ export type SearchQuery<Schema extends RowSchemaName, Name extends RowTableNames
  * @param {Subscription<S, T>} subscription - Subscription descriptor to register.
  * @returns {ReturnType<typeof attemptAsync<void>>} Async registration result.
  */
-const add_subscription = <S extends RowSchemaName, T extends RowTableNames<S>>(
+export const add_subscription = <S extends RowSchemaName, T extends RowTableNames<S>>(
 	client: Client,
 	subscription: Subscription<S, T>
 ) => {
-	return attemptAsync(async () => {
-		subscription.struct.log('Adding subscription', subscription);
-		const key = `${subscription.struct.schema}.${String(subscription.struct.table)}` as const;
-		const existing = subscriptions.get(key) ?? [];
-		existing.push(subscription as any);
-		subscriptions.set(key, existing);
+	subscription.struct.log('Adding subscription', subscription);
+	const schemaKey = String(subscription.struct.schema);
+	const tableKey = String(subscription.struct.table);
+	const filterKey = String(subscription.filter === '*' ? '*' : subscription.filter);
+
+	subscriptions[schemaKey] ??= {};
+	subscriptions[schemaKey][tableKey] ??= {};
+	const group = (subscriptions[schemaKey][tableKey][filterKey] ??= []);
+	const hadExistingGroup = group.length > 0;
+	group.push(subscription as any);
+	if (!hadExistingGroup) {
 		reset_realtime(client);
-	});
+	}
+
+	return () => {
+		const callbacks =
+			((subscriptions[schemaKey]?.[tableKey]?.[filterKey] ?? []) as Subscription<
+				RowSchemaName,
+				RowTableNames<RowSchemaName>
+			>[]) || [];
+		const remaining = (callbacks as any[]).filter((entry: any) => entry !== (subscription as any));
+		if (!remaining.length) {
+			delete subscriptions[schemaKey]?.[tableKey]?.[filterKey];
+			if (Object.keys(subscriptions[schemaKey]?.[tableKey] ?? {}).length === 0) {
+				delete subscriptions[schemaKey]?.[tableKey];
+			}
+			if (Object.keys(subscriptions[schemaKey] ?? {}).length === 0) {
+				delete subscriptions[schemaKey];
+			}
+			reset_realtime(client);
+		} else {
+			subscriptions[schemaKey][tableKey][filterKey] = remaining as any;
+		}
+	};
 };
 
 /**
@@ -896,6 +965,22 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 		return schema;
 	}
 
+	private normalize_schema_key(key: string) {
+		const trimmed = key.trim();
+		if (trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')) {
+			return trimmed.slice(1, -1);
+		}
+		return trimmed;
+	}
+
+	private normalize_row_payload(data: Record<string, unknown>) {
+		const normalized: Record<string, unknown> = {};
+		for (const [raw_key, value] of Object.entries(data)) {
+			normalized[this.normalize_schema_key(raw_key)] = value;
+		}
+		return normalized;
+	}
+
 	/**
 	 * Returns the non-null, non-optional row keys for this table in priority order.
 	 *
@@ -910,13 +995,19 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 			return ['id'];
 		}
 
-		const required = Object.keys(shape);
+		const required = Object.keys(shape)
+			.map((key) => this.normalize_schema_key(key))
+			.filter((key) => {
+				return key !== 'archived';
+			});
 
-		if (!required.includes('id')) {
-			required.unshift('id');
+		const deduped = Array.from(new SvelteSet(required));
+
+		if (!deduped.includes('id')) {
+			deduped.unshift('id');
 		}
 
-		return required as (keyof RowWithoutArchived<Schema, RowName>)[];
+		return deduped as (keyof RowWithoutArchived<Schema, RowName>)[];
 	}
 
 	/**
@@ -1073,9 +1164,13 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 					transaction.error.message.includes('permission denied') ||
 					transaction.error.message.includes('rls')
 				) {
-					throw new SupaError('unauthorized', `Permission denied: ${transaction.error.message}`);
+					throw new SupaError(
+						'unauthorized',
+						this,
+						`Permission denied: ${transaction.error.message}`
+					);
 				} else {
-					throw new SupaError('unknown', `Unknown error: ${transaction.error.message}`);
+					throw new SupaError('unknown', this, `Unknown error: ${transaction.error.message}`);
 				}
 			}
 
@@ -1087,10 +1182,11 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 					this.log('Expected array of objects, received item of type', typeof item);
 					throw new Error(`Expected an object but got ${typeof item}`);
 				}
+				this.log('Validating item:', item);
 				for (const field of requiredFields) {
-					if (!(field in item)) {
-						this.log(`Missing required field ${String(field)} in item`, item);
-						throw new Error(`Expected field ${String(field)} is missing in item`);
+					if (!(field.toString().replaceAll('"', '') in item)) {
+						this.log(`Missing required field "${String(field)}" in item`, item);
+						throw new Error(`Expected field "${String(field)}" is missing in item`);
 					}
 				}
 			};
@@ -1100,6 +1196,7 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 					this.log('Expected array, received', typeof transaction.data);
 					throw new SupaError(
 						'invalid data',
+						this,
 						`Expected an array but got ${typeof transaction.data}`
 					);
 				}
@@ -1108,11 +1205,11 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 			} else if (expect === 'single') {
 				if (Array.isArray(transaction.data)) {
 					this.log('Expected single object, received array');
-					throw new SupaError('invalid data', `Expected a single object but got an array`);
+					throw new SupaError('invalid data', this, `Expected a single object but got an array`);
 				}
 				if (transaction.data === null) {
 					this.log('Expected single object, received null');
-					throw new SupaError('invalid data', `Expected a single object but got null`);
+					throw new SupaError('invalid data', this, `Expected a single object but got null`);
 				}
 				validate(transaction.data);
 				this.log('Transaction successful with single result:', transaction.data);
@@ -1121,7 +1218,11 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 				// expect === 'null'
 				if (transaction.data !== null) {
 					this.log('Expected null, received', typeof transaction.data);
-					throw new SupaError('invalid data', `Expected null but got ${typeof transaction.data}`);
+					throw new SupaError(
+						'invalid data',
+						this,
+						`Expected null but got ${typeof transaction.data}`
+					);
 				}
 				this.log('Transaction successful with null result');
 				return null;
@@ -1170,7 +1271,7 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 	 */
 	log(...args: unknown[]) {
 		if (this.config.debug) {
-			console.log(`[SupaStruct:${this.table}] (${new SvelteDate().toISOString()})`, ...args);
+			console.trace(`[SupaStruct:${this.table}] (${new SvelteDate().toISOString()})`, ...args);
 		}
 	}
 
@@ -1191,10 +1292,37 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 	>(data: unknown, required?: readonly Required[]): PartialRow<Schema, RowName, Required> {
 		this.log('Validating row payload', { required });
 		const schema = this.getSchemaDefinition();
-		const parseResult = schema.Row.partial().safeParse(data);
+		if (!data || typeof data !== 'object') {
+			throw new SupaError(
+				'invalid data',
+				this,
+				`Failed to validate data for table ${this.table}: payload is not an object`
+			);
+		}
+
+		const raw_data = data as Record<string, unknown>;
+		const normalized_data = this.normalize_row_payload(raw_data);
+		const shape = (schema.Row as any).shape as Record<string, z.ZodTypeAny>;
+		const schema_aligned_data: Record<string, unknown> = {};
+		const raw_key_by_normalized = new SvelteMap<string, string>();
+
+		for (const raw_key of Object.keys(shape ?? {})) {
+			const normalized_key = this.normalize_schema_key(raw_key);
+			raw_key_by_normalized.set(normalized_key, raw_key);
+			if (Object.prototype.hasOwnProperty.call(raw_data, raw_key)) {
+				schema_aligned_data[raw_key] = raw_data[raw_key];
+				continue;
+			}
+			if (Object.prototype.hasOwnProperty.call(normalized_data, normalized_key)) {
+				schema_aligned_data[raw_key] = normalized_data[normalized_key];
+			}
+		}
+
+		const parseResult = schema.Row.partial().safeParse(schema_aligned_data);
 		if (!parseResult.success) {
 			throw new SupaError(
 				'invalid data',
+				this,
 				`Failed to validate data for table ${this.table}: ` + parseResult.error.message
 			);
 		}
@@ -1202,12 +1330,14 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 		const requiredFields = this.getEffectiveRequiredFields(required);
 
 		for (const field of requiredFields) {
-			const nullable = (schema.Row.shape as any)[field]?.isNullable() ?? false;
-			if (!nullable && !(field in parseResult.data)) {
+			const normalized_field = String(field);
+			const raw_key = raw_key_by_normalized.get(normalized_field) ?? normalized_field;
+			const nullable = (schema.Row.shape as any)[raw_key]?.isNullable() ?? false;
+			if (!nullable && !(normalized_field in normalized_data)) {
 				this.log(
 					`Validated data for table ${this.table} is missing required field ${String(field)}`,
 					{
-						data: parseResult.data,
+						data: normalized_data,
 						requiredFields
 					}
 				);
@@ -1217,7 +1347,7 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 				// );
 			}
 		}
-		return parseResult.data as PartialRow<Schema, RowName, Required>;
+		return normalized_data as PartialRow<Schema, RowName, Required>;
 	}
 
 	/**
@@ -1648,6 +1778,13 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 				.insert(hydrated.map((d) => d.raw as any));
 
 			if (error) {
+				if (error.message.toLowerCase().includes('query returned no rows')) {
+					this.log(
+						'Insert returned no rows; keeping local hydrated rows and treating write as successful',
+						error
+					);
+					return hydrated;
+				}
 				this.log('Error inserting new row:', error);
 				for (const item of hydrated) item['_deleteLocal']();
 				throw new Error(`Failed to insert new row: ${error.message}`);
@@ -1713,7 +1850,7 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 				return hydrated;
 			}
 
-			const { error } = await this.supabase
+			const { error, data: upsertedData } = await this.supabase
 				.schema(this.config.schema)
 				.from(this.table)
 				.upsert(
@@ -1721,15 +1858,32 @@ export class SupaStruct<Schema extends RowSchemaName, RowName extends RowTableNa
 					config
 						? {
 								onConflict: String(config.onConflict),
-								ignoreDuplicates: config.ignoreDuplicates ?? true
+								ignoreDuplicates:
+									config.ignoreDuplicates === undefined ? true : config.ignoreDuplicates
 							}
 						: undefined
-				);
+				)
+				.select();
 
 			if (error) {
 				this.log('Error upserting row:', error);
 				for (const item of hydrated) item['_deleteLocal']();
 				throw new Error(`Failed to upsert row: ${error.message}`);
+			}
+
+			// Update local cache with upserted data
+			if (upsertedData) {
+				const hydratedUpserted = this.Hydrate(upsertedData as any);
+				const dexie = this.getDexie(this.getSchemaDefinition().Row as any);
+				if (dexie) {
+					dexie.bulkUpsert(hydratedUpserted.map((d) => d.raw as any)).then((results) => {
+						if (results.isErr()) {
+							this.log('Error upserting row into Dexie cache:', results.error);
+						}
+					});
+				}
+
+				return hydratedUpserted;
 			}
 
 			return hydrated;
@@ -1814,6 +1968,8 @@ class SupaQuery<
 			required: this.required
 		});
 	}
+
+	state: 'idle' | 'cache' | 'pulled' | 'pulling' = $state('idle');
 
 	/**
 	 * Evaluates whether a cached row matches the current search filter.
@@ -1941,15 +2097,35 @@ class SupaQuery<
 		return f.build();
 	}
 
+	private _filter: (
+		data: SupaStructData<Schema, RowName>,
+		index: number,
+		array: SupaStructData<Schema, RowName>[]
+	) => boolean = () => true;
+
+	filter(
+		fn: (
+			data: SupaStructData<Schema, RowName>,
+			index: number,
+			array: SupaStructData<Schema, RowName>[]
+		) => boolean
+	) {
+		this._filter = fn;
+		return this;
+	}
+
 	/**
 	 * Reactive rows currently matching this query from in-memory cache.
 	 *
 	 * @returns {SupaStructData<Schema, RowName, Required>[]} Sorted matching rows.
 	 */
 	get reactive(): SupaStructData<Schema, RowName, Required>[] {
-		const rows = Array.from(this.struct.cache.values()).filter((item) =>
-			this.matches_filter(item as any)
-		);
+		const rows = Array.from(this.struct.cache.values())
+			.filter(
+				(item, index, array) =>
+					this.matches_filter(item as any) && this._filter(item as any, index, array as any)
+			)
+			.filter((d, i, a) => a.indexOf(d) === i);
 		return rows.sort(
 			(a, b) => (this._reverse ? -1 : 1) * this._sort(a as any, b as any)
 		) as SupaStructData<Schema, RowName, Required>[];
@@ -2021,7 +2197,7 @@ class SupaQuery<
 	 *
 	 * @returns {ReturnType<typeof attemptAsync<SupaStructData<Schema, RowName, Required>[]>>} Dexie hydration result.
 	 */
-	private pull_dexie() {
+	pull_dexie() {
 		this.struct.log('Pulling query data from Dexie cache');
 		return attemptAsync(async () => {
 			const dexie = this.struct.getDexie(this.struct.getSchemaDefinition().Row as any);
@@ -2036,6 +2212,7 @@ class SupaQuery<
 				this.required as any
 			) as SupaStructData<Schema, RowName, Required>[];
 
+			this.state = 'cache';
 			return hydrated.filter((data) => this.matches_filter(data));
 		});
 	}
@@ -2044,24 +2221,23 @@ class SupaQuery<
 	 * Removes stale rows from Dexie when the remote result set no longer contains them.
 	 */
 	private async pruneStaleDexieRows(remoteRows: PartialRow<Schema, RowName, Required>[]) {
-		const dexie = this.struct.getDexie(this.struct.getSchemaDefinition().Row as any);
-		if (!dexie) return;
-
-		const localRows =
-			this.filters === '*' ? await dexie.all() : await dexie.search(this.filters as any);
-		if (localRows.isErr()) return;
-
 		const remoteIds = new SvelteSet(remoteRows.map((row) => String((row as any).id)));
-		const staleIds = localRows.value
+		const staleIds = Array.from(this.struct.cache.values())
+			.filter((row) => this.matches_filter(row as any))
 			.map((row) => String((row.raw as any).id))
 			.filter((id) => !remoteIds.has(id));
 
 		if (!staleIds.length) return;
 
-		this.struct.log('Pruning stale Dexie rows not present in Supabase result', {
+		this.struct.log('Pruning stale query rows not present in Supabase result', {
 			count: staleIds.length,
 			ids: staleIds
 		});
+
+		this.struct['purge_cache'](staleIds);
+
+		const dexie = this.struct.getDexie(this.struct.getSchemaDefinition().Row as any);
+		if (!dexie) return;
 
 		const deleted = await dexie.delete_by_ids(staleIds);
 		if (deleted.isErr()) {
@@ -2153,6 +2329,7 @@ class SupaQuery<
 	fetch_all() {
 		this.struct.log('Fetching all query rows');
 		return attemptAsync(async () => {
+			this.state = 'pulling';
 			if (!is_online()) {
 				this.struct.log('Offline during fetch_all; serving from Dexie cache only');
 				await this.pull_dexie();
@@ -2164,12 +2341,15 @@ class SupaQuery<
 				.runTransaction({ data: res.data as any, error: res.error }, 'array', this.required as any)
 				.unwrap();
 
+			const hydrated = this.struct.Hydrate(result as any, this.required as any) as SupaStructData<
+				Schema,
+				RowName,
+				Required
+			>[];
+
 			await this.pruneStaleDexieRows(result as any);
 
-			const hydrated = this.struct.Hydrate(result as any, this.required as any, (data) =>
-				this.matches_filter(data as any)
-			) as SupaStructData<Schema, RowName, Required>[];
-
+			this.state = 'pulled';
 			return hydrated.filter((data) => this.matches_filter(data));
 		});
 	}
@@ -2195,7 +2375,7 @@ class SupaQuery<
 					count: reactive.length
 				};
 			}
-			const built = this.build();
+			const built = this.build('exact');
 			const from = (page - 1) * size;
 			const to = from + size - 1;
 			const res = await built.query.range(from, to);
@@ -2203,13 +2383,19 @@ class SupaQuery<
 				.runTransaction({ data: res.data as any, error: res.error }, 'array', this.required as any)
 				.unwrap();
 
-			const hydrated = this.struct.Hydrate(result as any, this.required as any, (data) =>
-				this.matches_filter(data)
-			) as SupaStructData<Schema, RowName, Required>[];
+			const hydrated = this.struct.Hydrate(result as any, this.required as any) as SupaStructData<
+				Schema,
+				RowName,
+				Required
+			>[];
+			const count = res.count ?? hydrated.length;
+			if (page === 1 && count <= size) {
+				await this.pruneStaleDexieRows(result as any);
+			}
 
 			return {
 				data: hydrated.filter((data) => this.matches_filter(data)),
-				count: res.count ?? hydrated.length
+				count
 			};
 		});
 	}
@@ -2237,6 +2423,7 @@ class SupaQuery<
 	private fetch_single(type: 'first' | 'last') {
 		this.struct.log('Fetching single query row', { type });
 		return attemptAsync(async () => {
+			this.state = 'pulling';
 			const built = this.build();
 			const res = await built.query.limit(1).order('created_at', {
 				ascending: type === 'first' ? true : false
@@ -2245,10 +2432,13 @@ class SupaQuery<
 				.runTransaction({ data: res.data as any, error: res.error }, 'array', this.required as any)
 				.unwrap();
 
-			const hydrated = this.struct.Hydrate(result as any, this.required as any, (data) =>
-				this.matches_filter(data)
-			) as SupaStructData<Schema, RowName, Required>[];
+			const hydrated = this.struct.Hydrate(result as any, this.required as any) as SupaStructData<
+				Schema,
+				RowName,
+				Required
+			>[];
 
+			this.state = 'pulled';
 			return hydrated.find((data) => this.matches_filter(data)) ?? null;
 		});
 	}
@@ -2284,6 +2474,7 @@ class SupaQuery<
 	sync(ttl: number) {
 		this.struct.log('Syncing query rows with ttl', ttl);
 		return this.pull_dexie().then(async () => {
+			this.state = 'cache';
 			if (!browser) {
 				return this.fetch_all();
 			}
@@ -2308,18 +2499,22 @@ class SupaQuery<
 					// 	return this.reactive;
 				}
 			}
+			this.state = 'pulling';
 
 			const built = this.build();
 			const res = await built.query;
+			this.state = 'pulled';
 			const result = this.struct
 				.runTransaction({ data: res.data as any, error: res.error }, 'array', this.required as any)
 				.unwrap();
 
-			await this.pruneStaleDexieRows(result as any);
+			const hydrated = this.struct.Hydrate(result as any, this.required as any) as SupaStructData<
+				Schema,
+				RowName,
+				Required
+			>[];
 
-			const hydrated = this.struct.Hydrate(result as any, this.required as any, (data) =>
-				this.matches_filter(data)
-			) as SupaStructData<Schema, RowName, Required>[];
+			await this.pruneStaleDexieRows(result as any);
 
 			await QueryCache.upsert({
 				query: query_key,
@@ -2354,7 +2549,7 @@ class SupaQuery<
 
 		return () => {
 			this.struct.log('Unsubscribing query from realtime updates');
-			void unsub;
+			unsub();
 		};
 	}
 
@@ -2602,7 +2797,7 @@ class JoinQuery<
 	/**
 	 * Attempts join hydration from Dexie-backed local data first.
 	 */
-	private async pull_dexie() {
+	async pull_dexie() {
 		this.struct.log('Pulling join data from Dexie cache');
 		const dexieA = this.struct.getDexie(this.struct.getSchemaDefinition().Row as any);
 		const dexieB = this.other.getDexie(this.other.getSchemaDefinition().Row as any);
@@ -2680,6 +2875,23 @@ class JoinQuery<
 		return query;
 	}
 
+	private _filter = (
+		_item: SupaStructData<Schema, RowName, RequiredA | 'id'>,
+		_index: number,
+		_array: SupaStructData<Schema, RowName, RequiredA | 'id'>[]
+	) => true;
+
+	filter(
+		fn: (
+			item: SupaStructData<Schema, RowName, RequiredA | 'id'>,
+			index: number,
+			array: SupaStructData<Schema, RowName, RequiredA | 'id'>[]
+		) => boolean
+	) {
+		this._filter = fn;
+		return this;
+	}
+
 	/**
 	 * Reactive left-table rows currently matched by this join.
 	 */
@@ -2687,9 +2899,14 @@ class JoinQuery<
 		const rows = Array.from(this.struct.cache.values()).filter((item) =>
 			this.matchedLeftIds.has(String(item.id))
 		);
-		return rows.sort(
-			(a, b) => (this._reverse ? -1 : 1) * this._sort(a as any, b as any)
-		) as SupaStructData<Schema, RowName, RequiredA | 'id'>[];
+		return rows
+			.filter((item, index, array) => array.indexOf(item) === index)
+			.filter(this._filter as any)
+			.sort((a, b) => (this._reverse ? -1 : 1) * this._sort(a as any, b as any)) as SupaStructData<
+			Schema,
+			RowName,
+			RequiredA | 'id'
+		>[];
 	}
 
 	/**
@@ -3291,6 +3508,7 @@ export class SupaStructData<
 				if (offline_updates.isErr()) {
 					throw new SupaError(
 						'offline',
+						this.struct,
 						'Failed to retrieve offline updates: ' + offline_updates.error.message
 					);
 				}

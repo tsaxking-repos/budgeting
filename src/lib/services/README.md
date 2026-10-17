@@ -1,6 +1,6 @@
 # src/lib/services
 
-Services are systems that maintain their own state and provide functionality to other parts of the application. They often interact with external resources such as APIs, databases, or other services. Services are typically long-lived and designed to be reusable and modular, allowing them to be easily integrated into different parts of the application, however this is not always the case.
+Services are systems that maintain their own state and provide functionality to other parts of the application. They often interact with external resources such as APIs, databases, or other services. Services are typically long-lived and designed to be reusable and modular, allowing them to be easily integrated into different parts of the application.
 
 ## Conventions
 

@@ -3,37 +3,66 @@
  */
 import { isBrowser, createServerClient, createBrowserClient } from '@supabase/ssr';
 import { SupaStruct } from '$lib/services/supabase/supastruct.svelte';
+import { type Database } from '$lib/types/supabase';
 
 export const load = async (event) => {
 	event.depends('supabase:auth');
 	const supabase = isBrowser()
 		? Object.assign(
-				createBrowserClient(event.data.env.supabase.url, event.data.env.supabase.public_key),
+				createBrowserClient<Database>(
+					event.data.env.supabase.url,
+					event.data.env.supabase.public_key,
+					{
+						global: {
+							fetch: event.fetch
+						},
+						auth: {
+							persistSession: true,
+							autoRefreshToken: true,
+							detectSessionInUrl: false,
+							flowType: 'pkce'
+						},
+						cookieOptions: {
+							name: 'sbid'
+						}
+					}
+				),
 				{
 					serviceRole: false
 				}
 			)
 		: Object.assign(
-				createServerClient(event.data.env.supabase.url, event.data.env.supabase.public_key, {
-					global: {
-						fetch: event.fetch
-					},
-					cookies: {
-						getAll: () => event.data.cookies || []
+				createServerClient<Database>(
+					event.data.env.supabase.url,
+					event.data.env.supabase.public_key,
+					{
+						global: {
+							fetch: event.fetch
+						},
+						cookies: {
+							getAll: () => event.data.cookies || [],
+							setAll: () => {
+								console.error(
+									'Attempted to set cookies on the +layout.ts from the server, which is not supported.'
+								);
+							}
+						},
+						auth: {
+							persistSession: true,
+							autoRefreshToken: true,
+							detectSessionInUrl: false
+						},
+						cookieOptions: {
+							name: 'sbid'
+						}
 					}
-				}),
+				),
 				{
 					serviceRole: false
 				}
 			);
 
-	const {
-		data: { session },
-		error
-	} = await supabase.auth.getSession();
-	if (error) {
-		console.error('Error fetching session:', error);
-	}
+	const session = isBrowser() ? (await supabase.auth.getSession()).data.session : null;
 
 	const Profile = SupaStruct.get({
 		client: supabase,
@@ -51,8 +80,8 @@ export const load = async (event) => {
 		account_id: String(event.data.profile?.id)
 	});
 
-	notifications.sync(1000 * 60);
-	notifications.subscribe();
+	if (event.data.profile) notifications.sync(1000 * 60);
+	if (event.data.profile) notifications.subscribe();
 
 	return {
 		supabase,

@@ -74,7 +74,7 @@ const globals: SchemaDefinition = {
 };
 
 const debug = (...args: unknown[]) => {
-	if (browser) {
+	if (browser && DEXIE_CONFIG.debug) {
 		console.log('[IndexedDB]', ...args);
 	}
 };
@@ -101,11 +101,14 @@ const parse_zod_field = (
 		else if (s instanceof z.ZodNumber) type = 'number';
 		else if (s instanceof z.ZodBoolean) type = 'boolean';
 		else if (s instanceof z.ZodDate) type = 'date';
-		else if (s instanceof z.ZodArray) {
-			throw new Error(
-				'Array types are not directly supported in IndexedDB schemas. Consider using a JSON string or separate table.'
-			);
-		} else if (s instanceof z.ZodObject) type = 'object';
+		else if (s instanceof z.ZodArray) type = 'array';
+		else if (
+			s instanceof z.ZodObject ||
+			s instanceof z.ZodRecord ||
+			s instanceof z.ZodTuple ||
+			s instanceof z.ZodUnion
+		)
+			type = 'object';
 		else type = 'unknown';
 	};
 
@@ -120,6 +123,14 @@ const parse_zod_field = (
 		type,
 		nullable
 	};
+};
+
+const normalize_schema_key = (key: string) => {
+	const trimmed = key.trim();
+	if (trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')) {
+		return trimmed.slice(1, -1);
+	}
+	return trimmed;
 };
 
 const parse_schema = (
@@ -147,11 +158,12 @@ const parse_schema = (
 			nullable: boolean;
 		}
 	> = {};
-	for (const key in shape) {
+	for (const raw_key in shape) {
+		const key = normalize_schema_key(raw_key);
 		if (['id', '_id', 'created_at', 'archived'].includes(key)) {
 			continue; // Skip reserved fields
 		}
-		parsed[key] = parse_zod_field((shape as any)[key]);
+		parsed[key] = parse_zod_field((shape as any)[raw_key]);
 	}
 	return parsed;
 };

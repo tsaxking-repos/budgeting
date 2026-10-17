@@ -40,7 +40,6 @@ export const parseSupabaseStartLog = (contents: string) => {
 			params[`${sectionName}_${key}`] = rawValue;
 			continue;
 		}
-
 		const sectionMatch = line.match(sectionRegex);
 		if (sectionMatch) {
 			const normalizedSection = normalizeSection(sectionMatch[1] || '');
@@ -61,7 +60,6 @@ export const parseSupabaseStartLog = (contents: string) => {
 		apis_project_url: z.string(),
 		apis_rest: z.string(),
 		apis_graphql: z.string(),
-		apis_edge_functions: z.string(),
 		database_url: z.string(),
 		authentication_keys_publishable: z.string(),
 		authentication_keys_secret: z.string(),
@@ -81,9 +79,8 @@ export default () => {
 	if (!fs.existsSync(absolutePath)) {
 		throw new Error(`Log file not found: ${absolutePath}`);
 	}
-
 	const contents = fs.readFileSync(absolutePath, 'utf-8');
-	// match all [<number>m
+	// match all ^[[<number>m
 	// eslint-disable-next-line no-control-regex
 	const cleanedContents = contents.replace(/\x1b\[\d+m/g, '');
 	fs.writeFileSync(absolutePath, cleanedContents, 'utf8');

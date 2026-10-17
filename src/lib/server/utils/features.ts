@@ -1,11 +1,26 @@
+/**
+ * @fileoverview Feature metadata and notification helpers for the static feature catalog.
+ *
+ * This module reads feature markdown files from `static/features`, caches their IDs, and emits
+ * notifications for newly discovered features.
+ *
+ * @example
+ * import { getFeatureList, makeFeatureNotifications } from '$lib/server/utils/features';
+ * const features = await getFeatureList().unwrap();
+ */
 import { attemptAsync } from 'ts-utils';
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import type { Icon } from '$lib/types/icons';
 import { type Feature } from '../../types/features';
-import { globalNotification } from '../model/notifications';
+import { global_notify } from '../utils/notifications';
 
+/**
+ * Reads the cached feature ID list from the private feature cache.
+ *
+ * @returns {ReturnType<typeof attemptAsync<string[]>>} Result-wrapped cached feature IDs.
+ */
 export const getCachedList = () => {
 	return attemptAsync(async () => {
 		const data = await fs.promises.readFile(
@@ -33,7 +48,7 @@ export const makeFeatureNotifications = () => {
 
 		await Promise.all(
 			newFeatures.map((f) =>
-				globalNotification({
+				global_notify({
 					title: `New Feature: ${f.name}`,
 					message: f.description,
 					severity: 'info',

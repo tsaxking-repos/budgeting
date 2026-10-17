@@ -28,7 +28,7 @@ export const load = async (event) => {
 		};
 	}
 
-	if (!userData?.user) {
+	if (!userData) {
 		throw redirect(303, '/account/sign-in');
 	}
 
@@ -66,7 +66,7 @@ export const load = async (event) => {
 	}
 
 	return {
-		user: userData?.user || null,
+		user: userData || null,
 		cookies: event.cookies.getAll(),
 		is_mentor: is_mentor.value,
 		is_student: is_student.value,
