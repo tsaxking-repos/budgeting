@@ -63,7 +63,8 @@ export default defineConfig(
 					caughtErrorsIgnorePattern: '^_',
 					destructuredArrayIgnorePattern: '^_'
 				}
-			]
+			],
+			'svelte/no-navigation-without-resolve': 'warn'
 		}
 	}
 );
