@@ -1,0 +1,1 @@
+DELETE FROM budgeting.transaction WHERE bucket_id = '833f4427-c386-4283-b350-abe815f724ec';

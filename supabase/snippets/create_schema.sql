@@ -1,41 +1,107 @@
-do $$
-declare
+DO $$
+DECLARE
   schema_name text;
-begin
-  foreach schema_name in array array[
+BEGIN
+  FOREACH schema_name IN ARRAY ARRAY[
     'test',
-    'core'
+    'core',
+    'budgeting'
   ]
-  loop
-    -- 1. Create schema
-    execute format('create schema if not exists %I', schema_name);
-
-    -- 2. Ensure postgres owns it (Critical for self-hosted grant authority)
-    execute format('alter schema %I owner to postgres', schema_name);
-
-    -- 3. Grant usage to all API roles AND the authenticator gateway
-    execute format('grant usage on schema %I to authenticated, service_role, authenticator', schema_name);
-
-    -- 4. Grant privileges on EXISTING objects
-    execute format('grant all privileges on all tables in schema %I to authenticated, service_role', schema_name);
-    execute format('grant all privileges on all sequences in schema %I to authenticated, service_role', schema_name);
-    execute format('grant all privileges on all functions in schema %I to authenticated, service_role', schema_name);
-
-    -- 5. Set default privileges for FUTURE objects created by postgres
-    execute format(
-      'alter default privileges for role postgres in schema %I grant all privileges on tables to authenticated, service_role',
+  LOOP
+    -- 1. Create schema if it does not exist
+    EXECUTE format(
+      'CREATE SCHEMA IF NOT EXISTS %I',
       schema_name
     );
 
-    execute format(
-      'alter default privileges for role postgres in schema %I grant all privileges on sequences to authenticated, service_role',
+    -- 2. Ensure postgres owns the schema
+    EXECUTE format(
+      'ALTER SCHEMA %I OWNER TO postgres',
       schema_name
     );
 
-    execute format(
-      'alter default privileges for role postgres in schema %I grant all privileges on functions to authenticated, service_role',
+    -- 3. Reset schema privileges
+    EXECUTE format(
+      'REVOKE ALL PRIVILEGES ON SCHEMA %I FROM PUBLIC',
       schema_name
     );
 
-  end loop;
-end $$;
+    EXECUTE format(
+      'REVOKE ALL PRIVILEGES ON SCHEMA %I FROM anon, authenticated, service_role, authenticator',
+      schema_name
+    );
+
+    -- 4. Reset privileges on existing tables and views
+    EXECUTE format(
+      'REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA %I FROM PUBLIC, anon, authenticated, service_role',
+      schema_name
+    );
+
+    -- 5. Reset privileges on existing sequences
+    EXECUTE format(
+      'REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA %I FROM PUBLIC, anon, authenticated, service_role',
+      schema_name
+    );
+
+    -- 6. Reset privileges on existing functions and procedures
+    EXECUTE format(
+      'REVOKE ALL PRIVILEGES ON ALL ROUTINES IN SCHEMA %I FROM PUBLIC, anon, authenticated, service_role',
+      schema_name
+    );
+
+    -- 7. Reset default privileges for future objects created by postgres
+    EXECUTE format(
+      'ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA %I REVOKE ALL PRIVILEGES ON TABLES FROM PUBLIC, anon, authenticated, service_role',
+      schema_name
+    );
+
+    EXECUTE format(
+      'ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA %I REVOKE ALL PRIVILEGES ON SEQUENCES FROM PUBLIC, anon, authenticated, service_role',
+      schema_name
+    );
+
+    EXECUTE format(
+      'ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA %I REVOKE ALL PRIVILEGES ON ROUTINES FROM PUBLIC, anon, authenticated, service_role',
+      schema_name
+    );
+
+    -- 8. Grant schema usage to API roles and authenticator
+    EXECUTE format(
+      'GRANT USAGE ON SCHEMA %I TO authenticated, service_role, authenticator',
+      schema_name
+    );
+
+    -- 9. Grant privileges on existing objects
+    EXECUTE format(
+      'GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA %I TO authenticated, service_role',
+      schema_name
+    );
+
+    EXECUTE format(
+      'GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA %I TO authenticated, service_role',
+      schema_name
+    );
+
+    EXECUTE format(
+      'GRANT ALL PRIVILEGES ON ALL ROUTINES IN SCHEMA %I TO authenticated, service_role',
+      schema_name
+    );
+
+    -- 10. Set default privileges for future objects created by postgres
+    EXECUTE format(
+      'ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA %I GRANT ALL PRIVILEGES ON TABLES TO authenticated, service_role',
+      schema_name
+    );
+
+    EXECUTE format(
+      'ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA %I GRANT ALL PRIVILEGES ON SEQUENCES TO authenticated, service_role',
+      schema_name
+    );
+
+    EXECUTE format(
+      'ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA %I GRANT ALL PRIVILEGES ON ROUTINES TO authenticated, service_role',
+      schema_name
+    );
+
+  END LOOP;
+END $$;

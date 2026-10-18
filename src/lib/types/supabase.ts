@@ -1,6 +1,352 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
+	budgeting: {
+		Tables: {
+			asset: {
+				Row: {
+					archived: boolean;
+					created_at: string;
+					current_value: number;
+					id: string;
+					name: string;
+				};
+				ComputedFields: never;
+				Insert: {
+					archived: boolean;
+					created_at?: string;
+					current_value: number;
+					id?: string;
+					name: string;
+				};
+				Update: {
+					archived?: boolean;
+					created_at?: string;
+					current_value?: number;
+					id?: string;
+					name?: string;
+				};
+				Relationships: [];
+			};
+			bucket: {
+				Row: {
+					archived: boolean;
+					balance: number;
+					created_at: string;
+					id: string;
+					name: string;
+				};
+				ComputedFields: never;
+				Insert: {
+					archived?: boolean;
+					balance: number;
+					created_at?: string;
+					id?: string;
+					name: string;
+				};
+				Update: {
+					archived?: boolean;
+					balance?: number;
+					created_at?: string;
+					id?: string;
+					name?: string;
+				};
+				Relationships: [];
+			};
+			budget: {
+				Row: {
+					archived: boolean;
+					created_at: string;
+					end_date: string;
+					id: string;
+					name: string;
+					start_date: string;
+					status: string;
+				};
+				ComputedFields: never;
+				Insert: {
+					archived?: boolean;
+					created_at?: string;
+					end_date: string;
+					id?: string;
+					name: string;
+					start_date: string;
+					status: string;
+				};
+				Update: {
+					archived?: boolean;
+					created_at?: string;
+					end_date?: string;
+					id?: string;
+					name?: string;
+					start_date?: string;
+					status?: string;
+				};
+				Relationships: [];
+			};
+			budget_item: {
+				Row: {
+					archived: boolean;
+					budget_id: string;
+					category: string;
+					created_at: string;
+					id: string;
+					planned_amount: number;
+					rollover: boolean;
+				};
+				ComputedFields: never;
+				Insert: {
+					archived?: boolean;
+					budget_id: string;
+					category: string;
+					created_at?: string;
+					id?: string;
+					planned_amount: number;
+					rollover: boolean;
+				};
+				Update: {
+					archived?: boolean;
+					budget_id?: string;
+					category?: string;
+					created_at?: string;
+					id?: string;
+					planned_amount?: number;
+					rollover?: boolean;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'budget_item_budget_id_fkey';
+						columns: ['budget_id'];
+						isOneToOne: false;
+						referencedRelation: 'budget';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'budget_item_category_fkey';
+						columns: ['category'];
+						isOneToOne: false;
+						referencedRelation: 'category';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			category: {
+				Row: {
+					archived: boolean;
+					color: string | null;
+					created_at: string;
+					icon: string | null;
+					id: string;
+					kind: string;
+					name: string;
+					parent_id: string | null;
+				};
+				ComputedFields: never;
+				Insert: {
+					archived?: boolean;
+					color?: string | null;
+					created_at?: string;
+					icon?: string | null;
+					id?: string;
+					kind: string;
+					name: string;
+					parent_id?: string | null;
+				};
+				Update: {
+					archived?: boolean;
+					color?: string | null;
+					created_at?: string;
+					icon?: string | null;
+					id?: string;
+					kind?: string;
+					name?: string;
+					parent_id?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'category_parent_id_fkey';
+						columns: ['parent_id'];
+						isOneToOne: false;
+						referencedRelation: 'category';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			tags: {
+				Row: {
+					archived: boolean;
+					color: string;
+					created_at: string;
+					id: string;
+					name: string;
+				};
+				ComputedFields: never;
+				Insert: {
+					archived?: boolean;
+					color: string;
+					created_at?: string;
+					id?: string;
+					name: string;
+				};
+				Update: {
+					archived?: boolean;
+					color?: string;
+					created_at?: string;
+					id?: string;
+					name?: string;
+				};
+				Relationships: [];
+			};
+			transaction: {
+				Row: {
+					amount: number;
+					archived: boolean;
+					bucket_id: string;
+					category: string | null;
+					created_at: string;
+					description: string | null;
+					id: string;
+					transfer_sibling: string | null;
+				};
+				ComputedFields: never;
+				Insert: {
+					amount: number;
+					archived?: boolean;
+					bucket_id: string;
+					category?: string | null;
+					created_at?: string;
+					description?: string | null;
+					id?: string;
+					transfer_sibling?: string | null;
+				};
+				Update: {
+					amount?: number;
+					archived?: boolean;
+					bucket_id?: string;
+					category?: string | null;
+					created_at?: string;
+					description?: string | null;
+					id?: string;
+					transfer_sibling?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'transaction_bucket_id_fkey';
+						columns: ['bucket_id'];
+						isOneToOne: false;
+						referencedRelation: 'bucket';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'transaction_category_fkey';
+						columns: ['category'];
+						isOneToOne: false;
+						referencedRelation: 'category';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'transaction_transfer_sibling_fkey';
+						columns: ['transfer_sibling'];
+						isOneToOne: false;
+						referencedRelation: 'transaction';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			transaction_tag: {
+				Row: {
+					archived: boolean;
+					created_at: string;
+					id: string;
+					tag_id: string | null;
+					transaction_id: string | null;
+				};
+				ComputedFields: never;
+				Insert: {
+					archived: boolean;
+					created_at?: string;
+					id?: string;
+					tag_id?: string | null;
+					transaction_id?: string | null;
+				};
+				Update: {
+					archived?: boolean;
+					created_at?: string;
+					id?: string;
+					tag_id?: string | null;
+					transaction_id?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'transaction_tag_tag_id_fkey';
+						columns: ['tag_id'];
+						isOneToOne: false;
+						referencedRelation: 'tags';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'transaction_tag_transaction_id_fkey';
+						columns: ['transaction_id'];
+						isOneToOne: false;
+						referencedRelation: 'transaction';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			transaction_transfer_dismissal: {
+				Row: {
+					archived: boolean;
+					created_at: string;
+					id: string;
+					left_transaction_id: string;
+					right_transaction_id: string;
+				};
+				ComputedFields: never;
+				Insert: {
+					archived?: boolean;
+					created_at?: string;
+					id?: string;
+					left_transaction_id: string;
+					right_transaction_id: string;
+				};
+				Update: {
+					archived?: boolean;
+					created_at?: string;
+					id?: string;
+					left_transaction_id?: string;
+					right_transaction_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'transaction_transfer_dismissal_left_transaction_id_fkey';
+						columns: ['left_transaction_id'];
+						isOneToOne: false;
+						referencedRelation: 'transaction';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'transaction_transfer_dismissal_right_transaction_id_fkey';
+						columns: ['right_transaction_id'];
+						isOneToOne: false;
+						referencedRelation: 'transaction';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+		};
+		Views: {
+			[_ in never]: never;
+		};
+		Functions: {
+			[_ in never]: never;
+		};
+		Enums: {
+			[_ in never]: never;
+		};
+		CompositeTypes: {
+			[_ in never]: never;
+		};
+	};
 	core: {
 		Tables: {
 			account_notification: {
@@ -17,6 +363,7 @@ export type Database = {
 					severity: string;
 					title: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					account_id: string;
 					archived?: boolean;
@@ -51,6 +398,7 @@ export type Database = {
 					created_at: string;
 					id: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					archived?: boolean;
 					created_at?: string;
@@ -74,6 +422,7 @@ export type Database = {
 					ttl: number;
 					url: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					archived?: boolean;
 					created_at?: string;
@@ -106,6 +455,7 @@ export type Database = {
 					last_name: string;
 					username: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					archived?: boolean;
 					created_at?: string;
@@ -135,6 +485,7 @@ export type Database = {
 					id: string;
 					name: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					archived?: boolean;
 					color: string;
@@ -161,6 +512,7 @@ export type Database = {
 					id: string;
 					role: string | null;
 				};
+				ComputedFields: never;
 				Insert: {
 					account?: string | null;
 					archived?: boolean;
@@ -193,6 +545,7 @@ export type Database = {
 					id: string;
 					prev_url: string | null;
 				};
+				ComputedFields: never;
 				Insert: {
 					account_id?: string | null;
 					archived?: boolean;
@@ -217,6 +570,7 @@ export type Database = {
 					session_id: string;
 					url: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					archived?: boolean;
 					created_at?: string;
@@ -263,6 +617,7 @@ export type Database = {
 					created_at: string;
 					id: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					archived?: boolean;
 					created_at?: string;
@@ -281,7 +636,7 @@ export type Database = {
 		};
 		Functions: {
 			get_schemas_and_tables: {
-				Args: never;
+				Args: Record<PropertyKey, never>;
 				Returns: {
 					schema_name: string;
 					table_name: string;
@@ -304,6 +659,7 @@ export type Database = {
 					id: number;
 					test_id: string | null;
 				};
+				ComputedFields: never;
 				Insert: {
 					archived?: boolean;
 					created_at?: string;
@@ -334,6 +690,7 @@ export type Database = {
 					id: string;
 					name: string;
 				};
+				ComputedFields: never;
 				Insert: {
 					age: number;
 					archived?: boolean;
@@ -380,9 +737,7 @@ export type Tables<
 		? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
 				DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
 		: never) = never
-> = DefaultSchemaTableNameOrOptions extends {
-	schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
 	? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
 			DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
 			Row: infer R;
@@ -405,9 +760,7 @@ export type TablesInsert<
 	}
 		? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
 		: never) = never
-> = DefaultSchemaTableNameOrOptions extends {
-	schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
 	? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
 			Insert: infer I;
 		}
@@ -429,9 +782,7 @@ export type TablesUpdate<
 	}
 		? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
 		: never) = never
-> = DefaultSchemaTableNameOrOptions extends {
-	schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
 	? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
 			Update: infer U;
 		}
@@ -453,9 +804,7 @@ export type Enums<
 	}
 		? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
 		: never) = never
-> = DefaultSchemaEnumNameOrOptions extends {
-	schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
 	? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
 	: DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
 		? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
@@ -469,15 +818,16 @@ export type CompositeTypes<
 	}
 		? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
 		: never) = never
-> = PublicCompositeTypeNameOrOptions extends {
-	schema: keyof DatabaseWithoutInternals;
-}
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
 	? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
 	: PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
 		? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
 		: never;
 
 export const Constants = {
+	budgeting: {
+		Enums: {}
+	},
 	core: {
 		Enums: {}
 	},
@@ -493,6 +843,81 @@ export type SchemaName = keyof Database;
 
 export type DatabasePivoted = {
 	Row: {
+		budgeting: {
+			asset: {
+				archived: boolean;
+				created_at: string;
+				current_value: number;
+				id: string;
+				name: string;
+			};
+			bucket: {
+				archived: boolean;
+				balance: number;
+				created_at: string;
+				id: string;
+				name: string;
+			};
+			budget: {
+				archived: boolean;
+				created_at: string;
+				end_date: string;
+				id: string;
+				name: string;
+				start_date: string;
+				status: string;
+			};
+			budget_item: {
+				archived: boolean;
+				budget_id: string;
+				category: string;
+				created_at: string;
+				id: string;
+				planned_amount: number;
+				rollover: boolean;
+			};
+			category: {
+				archived: boolean;
+				color: string | null;
+				created_at: string;
+				icon: string | null;
+				id: string;
+				kind: string;
+				name: string;
+				parent_id: string | null;
+			};
+			tags: {
+				archived: boolean;
+				color: string;
+				created_at: string;
+				id: string;
+				name: string;
+			};
+			transaction: {
+				amount: number;
+				archived: boolean;
+				bucket_id: string;
+				category: string | null;
+				created_at: string;
+				description: string | null;
+				id: string;
+				transfer_sibling: string | null;
+			};
+			transaction_tag: {
+				archived: boolean;
+				created_at: string;
+				id: string;
+				tag_id: string | null;
+				transaction_id: string | null;
+			};
+			transaction_transfer_dismissal: {
+				archived: boolean;
+				created_at: string;
+				id: string;
+				left_transaction_id: string;
+				right_transaction_id: string;
+			};
+		};
 		core: {
 			account_notification: {
 				account_id: string;
@@ -585,6 +1010,81 @@ export type DatabasePivoted = {
 		};
 	};
 	Insert: {
+		budgeting: {
+			asset: {
+				archived: boolean;
+				created_at?: string;
+				current_value: number;
+				id?: string;
+				name: string;
+			};
+			bucket: {
+				archived?: boolean;
+				balance: number;
+				created_at?: string;
+				id?: string;
+				name: string;
+			};
+			budget: {
+				archived?: boolean;
+				created_at?: string;
+				end_date: string;
+				id?: string;
+				name: string;
+				start_date: string;
+				status: string;
+			};
+			budget_item: {
+				archived?: boolean;
+				budget_id: string;
+				category: string;
+				created_at?: string;
+				id?: string;
+				planned_amount: number;
+				rollover: boolean;
+			};
+			category: {
+				archived?: boolean;
+				color?: string | null;
+				created_at?: string;
+				icon?: string | null;
+				id?: string;
+				kind: string;
+				name: string;
+				parent_id?: string | null;
+			};
+			tags: {
+				archived?: boolean;
+				color: string;
+				created_at?: string;
+				id?: string;
+				name: string;
+			};
+			transaction: {
+				amount: number;
+				archived?: boolean;
+				bucket_id: string;
+				category?: string | null;
+				created_at?: string;
+				description?: string | null;
+				id?: string;
+				transfer_sibling?: string | null;
+			};
+			transaction_tag: {
+				archived: boolean;
+				created_at?: string;
+				id?: string;
+				tag_id?: string | null;
+				transaction_id?: string | null;
+			};
+			transaction_transfer_dismissal: {
+				archived?: boolean;
+				created_at?: string;
+				id?: string;
+				left_transaction_id: string;
+				right_transaction_id: string;
+			};
+		};
 		core: {
 			account_notification: {
 				account_id: string;
@@ -677,6 +1177,81 @@ export type DatabasePivoted = {
 		};
 	};
 	Update: {
+		budgeting: {
+			asset: {
+				archived?: boolean;
+				created_at?: string;
+				current_value?: number;
+				id?: string;
+				name?: string;
+			};
+			bucket: {
+				archived?: boolean;
+				balance?: number;
+				created_at?: string;
+				id?: string;
+				name?: string;
+			};
+			budget: {
+				archived?: boolean;
+				created_at?: string;
+				end_date?: string;
+				id?: string;
+				name?: string;
+				start_date?: string;
+				status?: string;
+			};
+			budget_item: {
+				archived?: boolean;
+				budget_id?: string;
+				category?: string;
+				created_at?: string;
+				id?: string;
+				planned_amount?: number;
+				rollover?: boolean;
+			};
+			category: {
+				archived?: boolean;
+				color?: string | null;
+				created_at?: string;
+				icon?: string | null;
+				id?: string;
+				kind?: string;
+				name?: string;
+				parent_id?: string | null;
+			};
+			tags: {
+				archived?: boolean;
+				color?: string;
+				created_at?: string;
+				id?: string;
+				name?: string;
+			};
+			transaction: {
+				amount?: number;
+				archived?: boolean;
+				bucket_id?: string;
+				category?: string | null;
+				created_at?: string;
+				description?: string | null;
+				id?: string;
+				transfer_sibling?: string | null;
+			};
+			transaction_tag: {
+				archived?: boolean;
+				created_at?: string;
+				id?: string;
+				tag_id?: string | null;
+				transaction_id?: string | null;
+			};
+			transaction_transfer_dismissal: {
+				archived?: boolean;
+				created_at?: string;
+				id?: string;
+				left_transaction_id?: string;
+				right_transaction_id?: string;
+			};
+		};
 		core: {
 			account_notification: {
 				account_id?: string;
@@ -769,6 +1344,17 @@ export type DatabasePivoted = {
 		};
 	};
 	Relationships: {
+		budgeting: {
+			asset: Database['budgeting']['Tables']['asset']['Relationships'];
+			bucket: Database['budgeting']['Tables']['bucket']['Relationships'];
+			budget: Database['budgeting']['Tables']['budget']['Relationships'];
+			budget_item: Database['budgeting']['Tables']['budget_item']['Relationships'];
+			category: Database['budgeting']['Tables']['category']['Relationships'];
+			tags: Database['budgeting']['Tables']['tags']['Relationships'];
+			transaction: Database['budgeting']['Tables']['transaction']['Relationships'];
+			transaction_tag: Database['budgeting']['Tables']['transaction_tag']['Relationships'];
+			transaction_transfer_dismissal: Database['budgeting']['Tables']['transaction_transfer_dismissal']['Relationships'];
+		};
 		core: {
 			account_notification: Database['core']['Tables']['account_notification']['Relationships'];
 			admin: Database['core']['Tables']['admin']['Relationships'];

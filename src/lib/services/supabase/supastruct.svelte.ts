@@ -3469,6 +3469,17 @@ export class SupaStructData<
 		return new SvelteDate(this.raw.created_at);
 	}
 
+	set_archive(archived: boolean) {
+		return attemptAsync(async() => {
+			const result = await this.struct.supabase
+				.schema(this.struct.config.schema)
+				.from(this.struct.config.table as any)
+				.update({ archived } as any )
+				.eq('id' as any, this.id as any);
+			return this.struct.runTransaction(result, 'null').unwrap();
+		});
+	}
+
 	/**
 	 * Removes the current row from the local cache and Dexie store without touching the server.
 	 *

@@ -253,6 +253,105 @@ Use it whenever you need a reusable table adapter. Do not create a new struct fo
 - Only use a privileged client when server-side admin access is required.
 - Keep standard UI patterns on the regular client with permission-aware, typed queries.
 
+## Integration with sveltekit
+
+In sveltekit, these queries should be ONLY run on the `+page.server.ts`, `+layout.server.ts`, `+server.ts`, `+layout.ts`, `+page.ts` files. Never inside svelte files directly.
+
+### Singleton
+
+A singleton should always be pulled from the server, then throw an 404 if it doesn't exist. These should always be ssr.
+
+```ts
+// +page.server.ts
+export const load = async (event) => {
+	const SomeStruct = SupaStruct.get({
+		client: event.locals.supabase,
+		schema: 'public',
+		table: 'some_table'
+	});
+
+	const row = await SomeStruct.fromId(event.params.id);
+	if (row.isErr()) {
+		terminal.error('Failed to fetch row by ID', row.error);
+		throw error(500, 'Failed to fetch row by ID');
+	}
+	if (!row.value) {
+		throw error(404, 'Not found');
+	}
+
+	return { some_data: row.value.raw };
+};
+// +page.ts
+export const load = async (event) => {
+	const parent = await event.parent();
+	const SomeStruct = SupaStruct.get({
+		client: parent.supabase,
+		schema: 'public',
+		table: 'some_table'
+	});
+
+	return {
+		some_data: SomeStruct.Generator(event.data.some_data)
+	};
+};
+```
+
+### Multiple rows
+
+For multiple, make a decision between SSR and CSR based on the use case. If the data is required for initial page render, prefer SSR. If the data can be fetched after the page loads, CSR is acceptable.
+
+```ts
+// +page.server.ts (SSR Example)
+
+export const load = async (event) => {
+	const SomeStruct = SupaStruct.get({
+		client: event.locals.supabase,
+		schema: 'public',
+		table: 'some_table'
+	});
+
+	const rows = await SomeStruct.get({
+		foo: 'bar'
+	});
+	if (rows.isErr()) {
+		terminal.error('Failed to fetch rows', rows.error);
+		throw error(500, 'Failed to fetch rows');
+	}
+
+	return { some_data: rows.value.map((row) => row.raw) };
+};
+
+// +page.ts (SSR and CSR Example)
+export const load = async (event) => {
+	const parent = await event.parent();
+	const SomeStruct = SupaStruct.get({
+		client: parent.supabase,
+		schema: 'public',
+		table: 'some_table'
+	});
+
+	const some_data_query = SomeStruct.get({
+		foo: 'bar'
+	});
+
+	SomeStruct.Hydrate(event.data.some_data); // SSR ONLY: hydrate the local cache with initial data
+	some_data_query.sync(1000 * 60 * 10); // CSR ONLY: sync with 10 minute ttl (this hydrates from dexie and requests from supabase)
+	some_data_query.subscribe(); // initialize subscription for real-time updates
+
+	return {
+		some_data: some_data_query
+	};
+};
+```
+
+```svelte
+<script lang="ts">
+	const { data } = $props();
+
+	const some_data = $derived(data.some_data.reactive); // reactive is the reactive rows
+</script>
+```
+
 ## Quality checklist
 
 Before considering a change complete, verify:

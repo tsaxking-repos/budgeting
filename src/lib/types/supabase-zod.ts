@@ -8,272 +8,511 @@ export const schemas = {
 	core: {
 		account_notification: {
 			Row: z.object({
-				account_id: z.string(),
-				archived: z.boolean(),
-				created_at: z.string(),
-				icon: z.string(),
-				icon_type: z.string(),
-				id: z.string(),
-				link: z.string().nullable(),
-				message: z.string(),
-				read: z.boolean(),
-				severity: z.string(),
-				title: z.string()
+				'"account_id"': z.string(),
+				'"archived"': z.boolean(),
+				'"created_at"': z.string(),
+				'"icon"': z.string(),
+				'"icon_type"': z.string(),
+				'"id"': z.string(),
+				'"link"': z.string().nullable(),
+				'"message"': z.string(),
+				'"read"': z.boolean(),
+				'"severity"': z.string(),
+				'"title"': z.string()
 			}),
 			Insert: z.object({
-				account_id: z.string(),
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				icon: z.string(),
-				icon_type: z.string(),
-				id: z.string().optional(),
-				link: z.string().nullable().optional(),
-				message: z.string(),
-				read: z.boolean().optional(),
-				severity: z.string(),
-				title: z.string()
+				'"account_id"': z.string(),
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"icon"': z.string(),
+				'"icon_type"': z.string(),
+				'"id"': z.string().optional(),
+				'"link"': z.string().nullable().optional(),
+				'"message"': z.string(),
+				'"read"': z.boolean().optional(),
+				'"severity"': z.string(),
+				'"title"': z.string()
 			}),
 			Update: z.object({
-				account_id: z.string().optional(),
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				icon: z.string().optional(),
-				icon_type: z.string().optional(),
-				id: z.string().optional(),
-				link: z.string().nullable().optional(),
-				message: z.string().optional(),
-				read: z.boolean().optional(),
-				severity: z.string().optional(),
-				title: z.string().optional()
+				'"account_id"': z.string().optional(),
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"icon"': z.string().optional(),
+				'"icon_type"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"link"': z.string().nullable().optional(),
+				'"message"': z.string().optional(),
+				'"read"': z.boolean().optional(),
+				'"severity"': z.string().optional(),
+				'"title"': z.string().optional()
 			})
 		},
 		admin: {
-			Row: z.object({ archived: z.boolean(), created_at: z.string(), id: z.string() }),
+			Row: z.object({ '"archived"': z.boolean(), '"created_at"': z.string(), '"id"': z.string() }),
 			Insert: z.object({
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				id: z.string().optional()
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional()
 			}),
 			Update: z.object({
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				id: z.string().optional()
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional()
 			})
 		},
 		cached_request: {
 			Row: z.object({
-				archived: z.boolean(),
-				created_at: z.string(),
-				headers: z.string(),
-				id: z.string(),
-				response: z.string(),
-				status: z.number(),
-				ttl: z.number(),
-				url: z.string()
+				'"archived"': z.boolean(),
+				'"created_at"': z.string(),
+				'"headers"': z.string(),
+				'"id"': z.string(),
+				'"response"': z.string(),
+				'"status"': z.number(),
+				'"ttl"': z.number(),
+				'"url"': z.string()
 			}),
 			Insert: z.object({
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				headers: z.string(),
-				id: z.string().optional(),
-				response: z.string(),
-				status: z.number(),
-				ttl: z.number(),
-				url: z.string()
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"headers"': z.string(),
+				'"id"': z.string().optional(),
+				'"response"': z.string(),
+				'"status"': z.number(),
+				'"ttl"': z.number(),
+				'"url"': z.string()
 			}),
 			Update: z.object({
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				headers: z.string().optional(),
-				id: z.string().optional(),
-				response: z.string().optional(),
-				status: z.number().optional(),
-				ttl: z.number().optional(),
-				url: z.string().optional()
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"headers"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"response"': z.string().optional(),
+				'"status"': z.number().optional(),
+				'"ttl"': z.number().optional(),
+				'"url"': z.string().optional()
 			})
 		},
 		profile: {
 			Row: z.object({
-				archived: z.boolean(),
-				created_at: z.string(),
-				email: z.string(),
-				first_name: z.string(),
-				id: z.string(),
-				last_name: z.string(),
-				username: z.string()
+				'"archived"': z.boolean(),
+				'"created_at"': z.string(),
+				'"email"': z.string(),
+				'"first_name"': z.string(),
+				'"id"': z.string(),
+				'"last_name"': z.string(),
+				'"username"': z.string()
 			}),
 			Insert: z.object({
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				email: z.string(),
-				first_name: z.string(),
-				id: z.string(),
-				last_name: z.string(),
-				username: z.string()
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"email"': z.string(),
+				'"first_name"': z.string(),
+				'"id"': z.string(),
+				'"last_name"': z.string(),
+				'"username"': z.string()
 			}),
 			Update: z.object({
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				email: z.string().optional(),
-				first_name: z.string().optional(),
-				id: z.string().optional(),
-				last_name: z.string().optional(),
-				username: z.string().optional()
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"email"': z.string().optional(),
+				'"first_name"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"last_name"': z.string().optional(),
+				'"username"': z.string().optional()
 			})
 		},
 		role: {
 			Row: z.object({
-				archived: z.boolean(),
-				color: z.string(),
-				created_at: z.string(),
-				description: z.string(),
-				id: z.string(),
-				name: z.string()
+				'"archived"': z.boolean(),
+				'"color"': z.string(),
+				'"created_at"': z.string(),
+				'"description"': z.string(),
+				'"id"': z.string(),
+				'"name"': z.string()
 			}),
 			Insert: z.object({
-				archived: z.boolean().optional(),
-				color: z.string(),
-				created_at: z.string().optional(),
-				description: z.string(),
-				id: z.string().optional(),
-				name: z.string()
+				'"archived"': z.boolean().optional(),
+				'"color"': z.string(),
+				'"created_at"': z.string().optional(),
+				'"description"': z.string(),
+				'"id"': z.string().optional(),
+				'"name"': z.string()
 			}),
 			Update: z.object({
-				archived: z.boolean().optional(),
-				color: z.string().optional(),
-				created_at: z.string().optional(),
-				description: z.string().optional(),
-				id: z.string().optional(),
-				name: z.string().optional()
+				'"archived"': z.boolean().optional(),
+				'"color"': z.string().optional(),
+				'"created_at"': z.string().optional(),
+				'"description"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"name"': z.string().optional()
 			})
 		},
 		role_account: {
 			Row: z.object({
-				account: z.string().nullable(),
-				archived: z.boolean(),
-				created_at: z.string(),
-				id: z.string(),
-				role: z.string().nullable()
+				'"account"': z.string().nullable(),
+				'"archived"': z.boolean(),
+				'"created_at"': z.string(),
+				'"id"': z.string(),
+				'"role"': z.string().nullable()
 			}),
 			Insert: z.object({
-				account: z.string().nullable().optional(),
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				id: z.string().optional(),
-				role: z.string().nullable().optional()
+				'"account"': z.string().nullable().optional(),
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"role"': z.string().nullable().optional()
 			}),
 			Update: z.object({
-				account: z.string().nullable().optional(),
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				id: z.string().optional(),
-				role: z.string().nullable().optional()
+				'"account"': z.string().nullable().optional(),
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"role"': z.string().nullable().optional()
 			})
 		},
 		session: {
 			Row: z.object({
-				account_id: z.string().nullable(),
-				archived: z.boolean(),
-				created_at: z.string(),
-				id: z.string(),
-				prev_url: z.string().nullable()
+				'"account_id"': z.string().nullable(),
+				'"archived"': z.boolean(),
+				'"created_at"': z.string(),
+				'"id"': z.string(),
+				'"prev_url"': z.string().nullable()
 			}),
 			Insert: z.object({
-				account_id: z.string().nullable().optional(),
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				id: z.string().optional(),
-				prev_url: z.string().nullable().optional()
+				'"account_id"': z.string().nullable().optional(),
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"prev_url"': z.string().nullable().optional()
 			}),
 			Update: z.object({
-				account_id: z.string().nullable().optional(),
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				id: z.string().optional(),
-				prev_url: z.string().nullable().optional()
+				'"account_id"': z.string().nullable().optional(),
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"prev_url"': z.string().nullable().optional()
 			})
 		},
 		session_tab: {
 			Row: z.object({
-				archived: z.boolean(),
-				created_at: z.string(),
-				id: z.string(),
-				session_id: z.string(),
-				url: z.string()
+				'"archived"': z.boolean(),
+				'"created_at"': z.string(),
+				'"id"': z.string(),
+				'"session_id"': z.string(),
+				'"url"': z.string()
 			}),
 			Insert: z.object({
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				id: z.string().optional(),
-				session_id: z.string(),
-				url: z.string()
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"session_id"': z.string(),
+				'"url"': z.string()
 			}),
 			Update: z.object({
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				id: z.string().optional(),
-				session_id: z.string().optional(),
-				url: z.string().optional()
-			})
-		}
-	},
-	public: {
-		_template: {
-			Row: z.object({ archived: z.boolean(), created_at: z.string(), id: z.string() }),
-			Insert: z.object({
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				id: z.string().optional()
-			}),
-			Update: z.object({
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				id: z.string().optional()
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"session_id"': z.string().optional(),
+				'"url"': z.string().optional()
 			})
 		}
 	},
 	test: {
 		join_test: {
 			Row: z.object({
-				archived: z.boolean(),
-				created_at: z.string(),
-				id: z.number(),
-				test_id: z.string().nullable()
+				'"archived"': z.boolean(),
+				'"created_at"': z.string(),
+				'"id"': z.number(),
+				'"test_id"': z.string().nullable()
 			}),
 			Insert: z.object({
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				id: z.number().optional(),
-				test_id: z.string().nullable().optional()
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.number().optional(),
+				'"test_id"': z.string().nullable().optional()
 			}),
 			Update: z.object({
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				id: z.number().optional(),
-				test_id: z.string().nullable().optional()
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.number().optional(),
+				'"test_id"': z.string().nullable().optional()
 			})
 		},
 		test: {
 			Row: z.object({
-				age: z.number(),
-				archived: z.boolean(),
-				created_at: z.string(),
-				id: z.string(),
-				name: z.string()
+				'"age"': z.number(),
+				'"archived"': z.boolean(),
+				'"created_at"': z.string(),
+				'"id"': z.string(),
+				'"name"': z.string()
 			}),
 			Insert: z.object({
-				age: z.number(),
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				id: z.string().optional(),
-				name: z.string()
+				'"age"': z.number(),
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"name"': z.string()
 			}),
 			Update: z.object({
-				age: z.number().optional(),
-				archived: z.boolean().optional(),
-				created_at: z.string().optional(),
-				id: z.string().optional(),
-				name: z.string().optional()
+				'"age"': z.number().optional(),
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"name"': z.string().optional()
+			})
+		}
+	},
+	public: {
+		_template: {
+			Row: z.object({ '"archived"': z.boolean(), '"created_at"': z.string(), '"id"': z.string() }),
+			Insert: z.object({
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional()
+			}),
+			Update: z.object({
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional()
+			})
+		}
+	},
+	budgeting: {
+		asset: {
+			Row: z.object({
+				'"archived"': z.boolean(),
+				'"created_at"': z.string(),
+				'"current_value"': z.number(),
+				'"id"': z.string(),
+				'"name"': z.string()
+			}),
+			Insert: z.object({
+				'"archived"': z.boolean(),
+				'"created_at"': z.string().optional(),
+				'"current_value"': z.number(),
+				'"id"': z.string().optional(),
+				'"name"': z.string()
+			}),
+			Update: z.object({
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"current_value"': z.number().optional(),
+				'"id"': z.string().optional(),
+				'"name"': z.string().optional()
+			})
+		},
+		bucket: {
+			Row: z.object({
+				'"archived"': z.boolean(),
+				'"balance"': z.number(),
+				'"created_at"': z.string(),
+				'"id"': z.string(),
+				'"name"': z.string()
+			}),
+			Insert: z.object({
+				'"archived"': z.boolean().optional(),
+				'"balance"': z.number(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"name"': z.string()
+			}),
+			Update: z.object({
+				'"archived"': z.boolean().optional(),
+				'"balance"': z.number().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"name"': z.string().optional()
+			})
+		},
+		budget: {
+			Row: z.object({
+				'"archived"': z.boolean(),
+				'"created_at"': z.string(),
+				'"end_date"': z.string(),
+				'"id"': z.string(),
+				'"name"': z.string(),
+				'"start_date"': z.string(),
+				'"status"': z.string()
+			}),
+			Insert: z.object({
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"end_date"': z.string(),
+				'"id"': z.string().optional(),
+				'"name"': z.string(),
+				'"start_date"': z.string(),
+				'"status"': z.string()
+			}),
+			Update: z.object({
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"end_date"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"name"': z.string().optional(),
+				'"start_date"': z.string().optional(),
+				'"status"': z.string().optional()
+			})
+		},
+		budget_item: {
+			Row: z.object({
+				'"archived"': z.boolean(),
+				'"budget_id"': z.string(),
+				'"category"': z.string(),
+				'"created_at"': z.string(),
+				'"id"': z.string(),
+				'"planned_amount"': z.number(),
+				'"rollover"': z.boolean()
+			}),
+			Insert: z.object({
+				'"archived"': z.boolean().optional(),
+				'"budget_id"': z.string(),
+				'"category"': z.string(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"planned_amount"': z.number(),
+				'"rollover"': z.boolean()
+			}),
+			Update: z.object({
+				'"archived"': z.boolean().optional(),
+				'"budget_id"': z.string().optional(),
+				'"category"': z.string().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"planned_amount"': z.number().optional(),
+				'"rollover"': z.boolean().optional()
+			})
+		},
+		category: {
+			Row: z.object({
+				'"archived"': z.boolean(),
+				'"color"': z.string().nullable(),
+				'"created_at"': z.string(),
+				'"icon"': z.string().nullable(),
+				'"id"': z.string(),
+				'"kind"': z.string(),
+				'"name"': z.string(),
+				'"parent_id"': z.string().nullable()
+			}),
+			Insert: z.object({
+				'"archived"': z.boolean().optional(),
+				'"color"': z.string().nullable().optional(),
+				'"created_at"': z.string().optional(),
+				'"icon"': z.string().nullable().optional(),
+				'"id"': z.string().optional(),
+				'"kind"': z.string(),
+				'"name"': z.string(),
+				'"parent_id"': z.string().nullable().optional()
+			}),
+			Update: z.object({
+				'"archived"': z.boolean().optional(),
+				'"color"': z.string().nullable().optional(),
+				'"created_at"': z.string().optional(),
+				'"icon"': z.string().nullable().optional(),
+				'"id"': z.string().optional(),
+				'"kind"': z.string().optional(),
+				'"name"': z.string().optional(),
+				'"parent_id"': z.string().nullable().optional()
+			})
+		},
+		tags: {
+			Row: z.object({
+				'"archived"': z.boolean(),
+				'"color"': z.string(),
+				'"created_at"': z.string(),
+				'"id"': z.string(),
+				'"name"': z.string()
+			}),
+			Insert: z.object({
+				'"archived"': z.boolean().optional(),
+				'"color"': z.string(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"name"': z.string()
+			}),
+			Update: z.object({
+				'"archived"': z.boolean().optional(),
+				'"color"': z.string().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"name"': z.string().optional()
+			})
+		},
+		transaction: {
+			Row: z.object({
+				'"amount"': z.number(),
+				'"archived"': z.boolean(),
+				'"bucket_id"': z.string(),
+				'"category"': z.string().nullable(),
+				'"created_at"': z.string(),
+				'"description"': z.string().nullable(),
+				'"id"': z.string(),
+				'"transfer_sibling"': z.string().nullable()
+			}),
+			Insert: z.object({
+				'"amount"': z.number(),
+				'"archived"': z.boolean().optional(),
+				'"bucket_id"': z.string(),
+				'"category"': z.string().nullable().optional(),
+				'"created_at"': z.string().optional(),
+				'"description"': z.string().nullable().optional(),
+				'"id"': z.string().optional(),
+				'"transfer_sibling"': z.string().nullable().optional()
+			}),
+			Update: z.object({
+				'"amount"': z.number().optional(),
+				'"archived"': z.boolean().optional(),
+				'"bucket_id"': z.string().optional(),
+				'"category"': z.string().nullable().optional(),
+				'"created_at"': z.string().optional(),
+				'"description"': z.string().nullable().optional(),
+				'"id"': z.string().optional(),
+				'"transfer_sibling"': z.string().nullable().optional()
+			})
+		},
+		transaction_transfer_dismissal: {
+			Row: z.object({
+				'"archived"': z.boolean(),
+				'"created_at"': z.string(),
+				'"id"': z.string(),
+				'"left_transaction_id"': z.string(),
+				'"right_transaction_id"': z.string()
+			}),
+			Insert: z.object({
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"left_transaction_id"': z.string(),
+				'"right_transaction_id"': z.string()
+			}),
+			Update: z.object({
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"left_transaction_id"': z.string().optional(),
+				'"right_transaction_id"': z.string().optional()
+			})
+		},
+		transaction_tag: {
+			Row: z.object({
+				'"archived"': z.boolean(),
+				'"created_at"': z.string(),
+				'"id"': z.string(),
+				'"tag_id"': z.string().nullable(),
+				'"transaction_id"': z.string().nullable()
+			}),
+			Insert: z.object({
+				'"archived"': z.boolean(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"tag_id"': z.string().nullable().optional(),
+				'"transaction_id"': z.string().nullable().optional()
+			}),
+			Update: z.object({
+				'"archived"': z.boolean().optional(),
+				'"created_at"': z.string().optional(),
+				'"id"': z.string().optional(),
+				'"tag_id"': z.string().nullable().optional(),
+				'"transaction_id"': z.string().nullable().optional()
 			})
 		}
 	}

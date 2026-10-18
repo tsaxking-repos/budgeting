@@ -87,7 +87,7 @@ type Input<T extends keyof Inputs> = {
 	placeholder?: string;
 	required: boolean;
 	options?: Partial<Inputs[T]>;
-	value?: string;
+	value?: string | string[];
 	disabled?: boolean;
 	validation?: ValidationRule[];
 	helpText?: string;
@@ -380,7 +380,7 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 				case 'datetime-local':
 					el = document.createElement('input');
 					el.type = input.type;
-					if (input.value != undefined) el.setAttribute('value', input.value);
+					if (typeof input.value === 'string') el.setAttribute('value', input.value);
 
 					if (input.options) {
 						const o = input.options as Inputs['text'];
@@ -413,7 +413,7 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 				case 'textarea':
 					el = document.createElement('textarea');
 					el.rows = (input.options as Inputs['textarea'])?.rows || 3;
-					if (input.value != undefined) el.setAttribute('value', input.value);
+					if (typeof input.value === 'string') el.setAttribute('value', input.value);
 					break;
 				case 'checkbox':
 				case 'radio':
@@ -425,9 +425,14 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 						const checkInput = document.createElement('input');
 						checkInput.type = input.type;
 						checkInput.name = name;
-						checkInput.checked =
-							input.value === (typeof option === 'string' ? option : option.value);
-						checkInput.value = typeof option === 'string' ? option : option.value;
+						const optionValue = typeof option === 'string' ? option : option.value;
+						const selectedValues = Array.isArray(input.value)
+							? input.value
+							: input.value != undefined
+								? [input.value]
+								: [];
+						checkInput.checked = selectedValues.includes(optionValue);
+						checkInput.value = optionValue;
 						checkInput.classList.add('form-check-input');
 
 						const checkLabel = document.createElement('label');
@@ -449,7 +454,7 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 						if (typeof option !== 'string' && option.disabled) {
 							opt.disabled = true;
 						}
-						if (input.value != undefined) el.setAttribute('value', input.value);
+						if (typeof input.value === 'string') el.setAttribute('value', input.value);
 						el.appendChild(opt);
 					}
 					break;
@@ -495,9 +500,16 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 			if (config?.addListeners) {
 				const onChange = (e: Event) => {
 					const target = e.target as HTMLInputElement;
+					const fieldElements = form.querySelectorAll(`[name="${name}"]`);
+					const isCheckOrRadio = target.type === 'checkbox' || target.type === 'radio';
+					const selectedValues = isCheckOrRadio
+						? Array.from(fieldElements)
+								.filter((el) => (el as HTMLInputElement).checked)
+								.map((el) => (el as HTMLInputElement).value)
+						: null;
 
 					// Update current values for dirty state tracking
-					this._currentValues[name] = target.value;
+					this._currentValues[name] = isCheckOrRadio ? selectedValues ?? [] : target.value;
 					this._checkDirtyState();
 
 					// Clear field errors on change
@@ -864,9 +876,18 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 									const onchange = (e: Event) => {
 										const input = e.target as HTMLInputElement;
 										const fieldName = input.name;
+										const fieldElements = formEl.querySelectorAll(`[name="${fieldName}"]`);
+										const isCheckOrRadio = input.type === 'checkbox' || input.type === 'radio';
+										const selectedValues = isCheckOrRadio
+											? Array.from(fieldElements)
+													.filter((el) => (el as HTMLInputElement).checked)
+													.map((el) => (el as HTMLInputElement).value)
+											: null;
 
 										// Update current values for dirty state tracking
-										self._currentValues[fieldName] = input.value;
+										self._currentValues[fieldName] = isCheckOrRadio
+											? selectedValues ?? []
+											: input.value;
 										self._checkDirtyState();
 
 										// Clear field errors on change
